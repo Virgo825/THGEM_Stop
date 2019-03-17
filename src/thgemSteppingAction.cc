@@ -77,8 +77,8 @@ void thgemSteppingAction::UserSteppingAction(const G4Step* step)
 	// if(particleName != "neutron")
 	// G4cout << eventID << "    " << parentID << "    " << trackID << "    " << stepNumber << "    " << particleName << "    "  << G4BestUnit(globalTime, "Time") << "    " << G4BestUnit(kinEnergyStart, "Energy") << "    " << G4BestUnit(kinEnergy, "Energy") << "    " << G4BestUnit(energyDeposit, "Energy") << "    " << G4BestUnit(position.z(), "Length") << "    " << G4BestUnit(positionPost.z(), "Length") << "    " << namePre << "    " << namePost << G4endl;
 	
-	// if(((particleName == "alpha")||(particleName == "Li7"))&&((namePre == "Stop")&&(namePost == "Gas")))
-	if(((particleName == "alpha")||(particleName == "Li7"))&&((namePre == "Transform")&&(namePost == "Gas")))
+	if(((particleName == "alpha")||(particleName == "Li7"))&&((namePre == "Stop")&&(namePost == "Gas")))
+	// if(((particleName == "alpha")||(particleName == "Li7"))&&((namePre == "Transform")&&(namePost == "Gas")))
 	{
 		fEventAction->SaveParticleName(particleName);
 		fEventAction->SaveKinEnergyStart(kinEnergyStart);
