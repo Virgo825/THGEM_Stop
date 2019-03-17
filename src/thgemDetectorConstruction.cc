@@ -45,7 +45,7 @@ thgemDetectorConstruction::thgemDetectorConstruction()
 	: G4VUserDetectorConstruction(),
 	  fCathodeMaterial(NULL), fTransformMaterial(NULL), fGasMaterial(NULL),
 	  fPhysiLayer(NULL), fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiGas(NULL),
-	  fStepLimit(NULL),
+	  fStepLimit(NULL), regionTHGEM(NULL),
 	  fNbOfLayer(1), fCathodeThick(100*um), fTransformThick(0.1*um), 
 	  fStopThick(0.4*um), fGasThick(2.*mm), fB10Abundance(96.),
 	  fCheckOverlaps(true)
@@ -59,6 +59,7 @@ thgemDetectorConstruction::~thgemDetectorConstruction()
 {
 	delete fStepLimit;
 	delete fMessenger;
+	delete regionTHGEM;
 }
 G4VPhysicalVolume *thgemDetectorConstruction::Construct()
 {
@@ -225,7 +226,7 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	logicStop->SetVisAttributes(VisAttYellow);
 	logicGas->SetVisAttributes(VisAttBlue);
 
-	G4Region* regionTHGEM = new G4Region("RegionTHGEM");
+	regionTHGEM = new G4Region("RegionTHGEM");
 	logicDetector->SetRegion(regionTHGEM);
 	regionTHGEM->AddRootLogicalVolume(logicDetector);
 
