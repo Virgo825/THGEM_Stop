@@ -85,17 +85,13 @@ void thgemRunAction::BeginOfRunAction(const G4Run* /*run*/)
 	G4String stopMaterial = fDetector->GetStopMaterial();
 	G4String gasMaterial = fDetector->GetGasMaterial();
 
-	char name1[50], name2[10], name3[10];
-	sprintf(name1, "Neutron_%.1lfA_%dlayer_%.2lfum_", wavelength, layer, transformThick);
-	sprintf(name2, "_%.1lfum_", stopThick);
-	sprintf(name3, "_%.0lfmm_", gasThick);
-
-	G4String rootName = G4String(name1)+transformMaterial+G4String(name2)+stopMaterial+G4String(name3)+gasMaterial+".root";
+	char rootName[200];
+	sprintf(rootName, "%.1lfAneutron_%dlayer_%.2lfum%s_%.1lfum%s_%.0lfmm%s.root", wavelength, layer, transformThick, transformMaterial.c_str(), stopThick, stopMaterial.c_str(), gasThick, gasMaterial.c_str());
 
 	// Get analysis manager
 	G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
 	// Open an output file
-	analysisManager->OpenFile(rootName);
+	analysisManager->OpenFile(G4String(rootName));
 }
 void thgemRunAction::EndOfRunAction(const G4Run* /*run*/)
 {
