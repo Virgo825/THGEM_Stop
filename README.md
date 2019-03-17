@@ -1,17 +1,23 @@
-ATTENTION: To compile and link this program, a version of Geant4.10 has to be installed.
+### 要求: 
+要正常编译该程序，需要<font color=orange>Geant4.10</font>版本。
 
-Change number of layers will reset material.
+### 介绍
+模拟中子与B~4~C反应。保存$\alpha$与^7^Li粒子信息以及初电离电子的信息到root文件，以中子波长与探测器参数来命名root文件。可以通过mac文件来修改探测器结构，包括尺寸、材料以及层数，也可以通过设置中子波长来设置中子能量。可以通过自带的 <font color=blue>gun</font> 来修改入射粒子信息。
 
-Simulation 1.8A Neutron react with 0.1um B4C.
 
-Save alpha and Li7 particle information such as outgoing energy, momentum(angle distribution) and energy deposition in Gas(90% Ar and 10% CO2).
-
-How to run?
-
+### 编译运行
+```bash
+mkdir build
 cd build
 cmake ..
 make
-
-To run the program in batch mode, please type >./thgem -m ./run.mac.
-In run.mac one can set the type and energy of the particle that are fired with the particle gun.
-The program can also be run with visualization, for that type >./thgem, and then press the "run" button.
+```
+以 batch mode 运行程序, 在终端输入 
+```bash
+>./thgem -m ./run.mac.
+```
+程序也可以以可视化的方式来运行，在终端输入
+```bash
+>./thgem
+```
+然后点击 <font color=magenta>run</font> 按钮.
