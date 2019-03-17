@@ -47,7 +47,7 @@ thgemDetectorConstruction::thgemDetectorConstruction()
 	  fPhysiLayer(NULL), fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiGas(NULL),
 	  fStepLimit(NULL),
 	  fNbOfLayer(1), fCathodeThick(100*um), fTransformThick(0.1*um), 
-	  fStopThick(0.0*um), fGasThick(2.*mm), fB10Abundance(96.),
+	  fStopThick(0.4*um), fGasThick(2.*mm), fB10Abundance(96.),
 	  fCheckOverlaps(true)
 {
 	// Define materials
@@ -200,10 +200,10 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	fPhysiTransform= new G4PVPlacement(0, positionTransform, logicTransform, "Transform", logicLayer, false, 0, fCheckOverlaps);
 
 	// Stop
-	// G4ThreeVector positionStop = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
-	// G4VSolid *solidStop = new G4Box("Stop", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * stopSizeZ);
-	// G4LogicalVolume *logicStop = new G4LogicalVolume(solidStop, fStopMaterial, "Stop");
-	// fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicLayer, false, 0, fCheckOverlaps);
+	G4ThreeVector positionStop = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
+	G4VSolid *solidStop = new G4Box("Stop", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * stopSizeZ);
+	G4LogicalVolume *logicStop = new G4LogicalVolume(solidStop, fStopMaterial, "Stop");
+	fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicLayer, false, 0, fCheckOverlaps);
 
 	// Gas
 	G4ThreeVector positionGas = G4ThreeVector(0., 0., -layerSizeZ/2.+gasSizeZ/2.);
@@ -222,7 +222,7 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	logicDetector->SetVisAttributes(VisAttWhite);
 	logicCathode->SetVisAttributes(VisAttRed);
 	logicTransform->SetVisAttributes(VisAttGreen);
-	// logicStop->SetVisAttributes(VisAttYellow);
+	logicStop->SetVisAttributes(VisAttYellow);
 	logicGas->SetVisAttributes(VisAttBlue);
 
 	G4Region* regionTHGEM = new G4Region("RegionTHGEM");
