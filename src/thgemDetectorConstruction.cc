@@ -1,6 +1,7 @@
 
 #include "thgemDetectorConstruction.hh"
 #include "thgemDetectorMessenger.hh"
+#include "thgemFastSimulationModel.hh"
 
 #include "G4Material.hh"
 #include "G4Element.hh"
@@ -44,11 +45,10 @@
 thgemDetectorConstruction::thgemDetectorConstruction()
 	: G4VUserDetectorConstruction(),
 	  fCathodeMaterial(NULL), fTransformMaterial(NULL), fGasMaterial(NULL),
-	  fPhysiLayer(NULL), fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiGas(NULL),
-	  fStepLimit(NULL), regionTHGEM(NULL),
-	  fNbOfLayer(1), fCathodeThick(100*um), fTransformThick(0.1*um), 
-	  fStopThick(0.4*um), fGasThick(2.*mm), fB10Abundance(96.),
-	  fCheckOverlaps(true)
+	  fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiStop(NULL), fPhysiGas(NULL),
+	  fStepLimit(NULL), fFastSimulationModel(NULL), 
+	  fCathodeThick(100*um), fTransformThick(0.1*um), fStopThick(0.4*um), fGasThick(2.*mm),
+	  fB10Abundance(96.), fCheckOverlaps(true)
 {
 	// Define materials
 	DefineMaterials();
@@ -59,7 +59,6 @@ thgemDetectorConstruction::~thgemDetectorConstruction()
 {
 	delete fStepLimit;
 	delete fMessenger;
-	delete regionTHGEM;
 }
 G4VPhysicalVolume *thgemDetectorConstruction::Construct()
 {
@@ -138,15 +137,14 @@ void thgemDetectorConstruction::DefineMaterials()
 G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 {
 	// Geometry parameters
-	const G4double SizeXY = 100 * mm;
+	const G4double SizeXY = 20 * mm;
 	G4double cathodeSizeZ = fCathodeThick;
 	G4double transformSizeZ = fTransformThick;
 	G4double stopSizeZ = fStopThick;
 	G4double gasSizeZ = fGasThick;
-	G4double layerSizeZ = cathodeSizeZ + transformSizeZ + stopSizeZ + gasSizeZ;
-	G4double detectorSizeZ = layerSizeZ * fNbOfLayer;
-	G4double worldSizeXY = 1.2 * SizeXY;
-	G4double worldSizeZ = 2 * detectorSizeZ;
+	G4double detectorSizeZ = cathodeSizeZ + transformSizeZ + stopSizeZ + gasSizeZ;
+	G4double worldSizeXZ = 1.2 * SizeXY;
+	G4double worldSizeY = 6 * detectorSizeZ;
 
 	// Get materials
 	G4Material *worldMaterial = G4Material::GetMaterial("G4_AIR"); // Neutron react with nitrogen and oxygen.
@@ -163,7 +161,7 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 
 	// World
 	G4VSolid *solidWorld = new G4Box("World",												  // its name
-									 0.5 * worldSizeXY, 0.5 * worldSizeXY, 0.5 * worldSizeZ); // its size
+									 0.5 * worldSizeXZ, 0.5 * worldSizeY, 0.5 * worldSizeXZ); // its size
 	G4LogicalVolume *logicWorld = new G4LogicalVolume(solidWorld,							  // its solid
 													  worldMaterial,						  // its material
 													  "World");								  //its name
@@ -176,59 +174,57 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 													  0,									  // copy number
 													  fCheckOverlaps);						  // checking overlaps
 	// Detector
+	G4ThreeVector positionDetector = G4ThreeVector(0., detectorSizeZ/2., 0.);
+	G4RotationMatrix *rotX = new G4RotationMatrix();
+	rotX->rotateX(90. * CLHEP::degree);
 	G4VSolid *solidDetector = new G4Box("Detector", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * detectorSizeZ);
 	G4LogicalVolume *logicDetector = new G4LogicalVolume(solidDetector, fGasMaterial, "Detector");
-	new G4PVPlacement(0, G4ThreeVector(), logicDetector, "Detector", logicWorld, false, 0, fCheckOverlaps);
+	new G4PVPlacement(rotX, positionDetector, logicDetector, "Detector", logicWorld, false, 0, fCheckOverlaps);
 
-	// Layer
-	G4VSolid *solidLayer = new G4Box("Layer", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * layerSizeZ);
-	G4LogicalVolume *logicLayer = new G4LogicalVolume(solidLayer, fGasMaterial, "Layer");
-	if(fNbOfLayer > 1)
-		fPhysiLayer = new G4PVReplica("Layer", logicLayer, logicDetector, kZAxis, fNbOfLayer, layerSizeZ);
-	else
-		fPhysiLayer = new G4PVPlacement(0, G4ThreeVector(), logicLayer, "Layer", logicDetector, false, 0, fCheckOverlaps);
-	
 	// Cathode
-	G4ThreeVector positionCathode = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ/2.);
+	G4ThreeVector positionCathode = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ/2.);
 	G4VSolid *solidCathode = new G4Box("Cathode", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * cathodeSizeZ);
 	G4LogicalVolume *logicCathode = new G4LogicalVolume(solidCathode, fCathodeMaterial, "Cathode");
-	fPhysiCathode = new G4PVPlacement(0, positionCathode, logicCathode, "Cathode", logicLayer, false, 0, fCheckOverlaps);
+	fPhysiCathode = new G4PVPlacement(0, positionCathode, logicCathode, "Cathode", logicDetector, false, 0, fCheckOverlaps);
 
 	// Transform
-	G4ThreeVector positionTransform = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ-transformSizeZ/2.);
+	G4ThreeVector positionTransform = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ-transformSizeZ/2.);
 	G4VSolid *solidTransform = new G4Box("Transform", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * transformSizeZ);
 	G4LogicalVolume *logicTransform = new G4LogicalVolume(solidTransform, fTransformMaterial, "Transform");
-	fPhysiTransform= new G4PVPlacement(0, positionTransform, logicTransform, "Transform", logicLayer, false, 0, fCheckOverlaps);
+	fPhysiTransform= new G4PVPlacement(0, positionTransform, logicTransform, "Transform", logicDetector, false, 0, fCheckOverlaps);
 
 	// Stop
-	G4ThreeVector positionStop = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
+	G4ThreeVector positionStop = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
 	G4VSolid *solidStop = new G4Box("Stop", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * stopSizeZ);
 	G4LogicalVolume *logicStop = new G4LogicalVolume(solidStop, fStopMaterial, "Stop");
-	fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicLayer, false, 0, fCheckOverlaps);
+	fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicDetector, false, 0, fCheckOverlaps);
 
 	// Gas
-	G4ThreeVector positionGas = G4ThreeVector(0., 0., -layerSizeZ/2.+gasSizeZ/2.);
+	G4ThreeVector positionGas = G4ThreeVector(0., 0., -detectorSizeZ/2.+gasSizeZ/2.);
 	G4VSolid *solidGas = new G4Box("Gas", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * gasSizeZ);
 	G4LogicalVolume *logicGas = new G4LogicalVolume(solidGas, fGasMaterial, "Gas");
-	fPhysiGas = new G4PVPlacement(0, positionGas, logicGas, "Gas", logicLayer, false, 0, fCheckOverlaps);
+	fPhysiGas = new G4PVPlacement(0, positionGas, logicGas, "Gas", logicDetector, false, 0, fCheckOverlaps);
 
 	// Visualization attributes
 	G4VisAttributes *VisAttBlue = new G4VisAttributes(G4Colour(0.0, 0.0, 1.0));
 	G4VisAttributes *VisAttGreen = new G4VisAttributes(G4Colour(0.0, 1.0, 0.0));
 	G4VisAttributes *VisAttYellow = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
 	G4VisAttributes *VisAttRed = new G4VisAttributes(G4Colour(1.0, 0.0, 0.0));
-	G4VisAttributes* VisAttWhite = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
+	G4VisAttributes *VisAttWhite = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
 
-	logicWorld->SetVisAttributes(G4VisAttributes::Invisible);
+	// logicWorld->SetVisAttributes(G4VisAttributes::Invisible);
 	logicDetector->SetVisAttributes(VisAttWhite);
 	logicCathode->SetVisAttributes(VisAttRed);
 	logicTransform->SetVisAttributes(VisAttGreen);
 	logicStop->SetVisAttributes(VisAttYellow);
 	logicGas->SetVisAttributes(VisAttBlue);
 
-	regionTHGEM = new G4Region("RegionTHGEM");
-	logicDetector->SetRegion(regionTHGEM);
-	regionTHGEM->AddRootLogicalVolume(logicDetector);
+	G4Region* regionGas = new G4Region("RegionGas");
+	// logicGas->SetRegion(regionGas);
+	regionGas->AddRootLogicalVolume(logicGas);
+
+	fFastSimulationModel = new thgemFastSimulationModel("thgemFastSimulationModel", regionGas);
+	fFastSimulationModel->WriteGeometryToGDML(fPhysiGas);
 
 	// Always return the physical World
 	return physiWorld;
@@ -239,7 +235,7 @@ void thgemDetectorConstruction::ConstructSDandField()
 void thgemDetectorConstruction::PrintDetectorParameter() const
 {
 	G4cout << "------------------------------------------" << G4endl
-		   << " ---> The detector is " << fNbOfLayer << " layers: " << G4endl
+		   << " ---> The detector component: " << G4endl
 		   << " ---> " << fCathodeMaterial->GetName() << " : " << G4BestUnit(fCathodeThick, "Length") << G4endl
 		   << " ---> " << fTransformMaterial->GetName() << " : " << G4BestUnit(fTransformThick, "Length") << G4endl
 		   << " ---> " << fStopMaterial->GetName() << " : " << G4BestUnit(fStopThick, "Length") << G4endl 
@@ -255,7 +251,7 @@ void thgemDetectorConstruction::SetCathodeMaterial(G4String materialName)
 		fPhysiCathode->GetLogicalVolume()->SetMaterial(fCathodeMaterial);
 		G4RunManager::GetRunManager()->PhysicsHasBeenModified();
 	}else
-		G4cout << G4endl << "---> WARNING from SetCathodeMaterial :" << materialName << " not found." << G4endl;
+		G4cout << "\n---> WARNING from SetCathodeMaterial :" << materialName << " not found." << G4endl;
 }
 void thgemDetectorConstruction::SetTransformMaterial(G4String materialName)
 {
@@ -268,7 +264,7 @@ void thgemDetectorConstruction::SetTransformMaterial(G4String materialName)
 			fPhysiTransform->GetLogicalVolume()->SetMaterial(fTransformMaterial);
 			G4RunManager::GetRunManager()->PhysicsHasBeenModified();
 		}else
-			G4cout << G4endl << "---> WARNING from SetTransformMaterial :" << materialName << " not found." << G4endl;
+			G4cout << "\n---> WARNING from SetTransformMaterial :" << materialName << " not found." << G4endl;
 	}
 }
 void thgemDetectorConstruction::SetStopMaterial(G4String materialName)
@@ -282,7 +278,7 @@ void thgemDetectorConstruction::SetStopMaterial(G4String materialName)
 			fPhysiStop->GetLogicalVolume()->SetMaterial(fStopMaterial);
 			G4RunManager::GetRunManager()->PhysicsHasBeenModified();
 		}else
-			G4cout << G4endl << "---> WARNING from SetStopMaterial :" << materialName << " not found." << G4endl;
+			G4cout << "\n---> WARNING from SetStopMaterial :" << materialName << " not found." << G4endl;
 	}
 }
 void thgemDetectorConstruction::SetGasMaterial(G4String materialName)
@@ -296,24 +292,12 @@ void thgemDetectorConstruction::SetGasMaterial(G4String materialName)
 			fPhysiGas->GetLogicalVolume()->SetMaterial(fGasMaterial);
 			G4RunManager::GetRunManager()->PhysicsHasBeenModified();
 		}else
-			G4cout << G4endl << "---> WARNING from SetGasMaterial :" << materialName << " not found." << G4endl;
+			G4cout << "\n---> WARNING from SetGasMaterial :" << materialName << " not found." << G4endl;
 	}
 }
 void thgemDetectorConstruction::SetMaxStep(G4double maxStep)
 {
-	if((fStepLimit)&&(maxStep>0.)) 
-		fStepLimit->SetMaxAllowedStep(maxStep);
-}
-void thgemDetectorConstruction::SetNbOfLayer(G4int val)
-{
-	if(val < 1)
-	{
-		G4cout << "\n ---> Warning from SetNbOfLayers: "
-			   << val << " must be at least 1. Command refused." << G4endl;
-		return;
-	}
-	fNbOfLayer = val;
-	G4RunManager::GetRunManager()->ReinitializeGeometry();
+	if((fStepLimit)&&(maxStep>0.)) fStepLimit->SetMaxAllowedStep(maxStep);
 }
 // void thgemDetectorConstruction::SetCathodeThick(G4double val)
 // {

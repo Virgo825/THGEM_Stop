@@ -30,7 +30,7 @@ thgemRunAction::thgemRunAction(thgemDetectorConstruction* det, thgemPrimaryGener
 	// Creating histograms
 	// analysisManager->CreateH1("1", "Edep in Gas", 100, 0., 2*MeV);
 	// analysisManager->CreateH2("1", "Track position in XY", 200, -10*cm, 10*cm, 200, -10*cm, 10*cm);
-	analysisManager->CreateH3("1", "Track position", 100, -5*mm, 5*mm, 100, -5*mm, 5*mm, 200, -1*cm, 1*cm);
+	analysisManager->CreateH3("1", "Track position", 100, -5*mm, 5*mm, 100, -5*mm, 5*mm, 100, -1*mm, 9*mm);
 
 	// Creating 1st ntuple (id = 0)
 	analysisManager->CreateNtuple("ion", "The information of primary ions");
@@ -38,6 +38,7 @@ thgemRunAction::thgemRunAction(thgemDetectorConstruction* det, thgemPrimaryGener
 	analysisManager->CreateNtupleSColumn("ParticleName");
 	analysisManager->CreateNtupleDColumn("KinEnergyStart");
 	analysisManager->CreateNtupleDColumn("KinEnergy");
+	analysisManager->CreateNtupleDColumn("EnergyGas");
 	analysisManager->CreateNtupleDColumn("GlobalTime");
 	analysisManager->CreateNtupleDColumn("Position_x");
 	analysisManager->CreateNtupleDColumn("Position_y");
@@ -46,7 +47,6 @@ thgemRunAction::thgemRunAction(thgemDetectorConstruction* det, thgemPrimaryGener
 	analysisManager->CreateNtupleDColumn("Momentum_y");
 	analysisManager->CreateNtupleDColumn("Momentum_z");
 	analysisManager->CreateNtupleDColumn("Angle");
-	analysisManager->CreateNtupleDColumn("EnergyGas");
 	analysisManager->CreateNtupleIColumn("ElectronNumber");
 	analysisManager->CreateNtupleDColumn("ElectronCenter_x");
 	analysisManager->CreateNtupleDColumn("ElectronCenter_y");
@@ -55,16 +55,10 @@ thgemRunAction::thgemRunAction(thgemDetectorConstruction* det, thgemPrimaryGener
 
 	// Creating 2nd ntuple (id = 1)
 	analysisManager->CreateNtuple("ele", "The information of electron");
-	analysisManager->CreateNtupleIColumn("EventID");
-	analysisManager->CreateNtupleIColumn("ParentID");
-	analysisManager->CreateNtupleDColumn("KinEnergyStart");
-	analysisManager->CreateNtupleDColumn("GlobalTime");
 	analysisManager->CreateNtupleDColumn("Position_x");
 	analysisManager->CreateNtupleDColumn("Position_y");
 	analysisManager->CreateNtupleDColumn("Position_z");
-	analysisManager->CreateNtupleDColumn("Momentum_x");
-	analysisManager->CreateNtupleDColumn("Momentum_y");
-	analysisManager->CreateNtupleDColumn("Momentum_z");
+	analysisManager->CreateNtupleDColumn("GlobalTime");
 	analysisManager->FinishNtuple();
 }
 thgemRunAction::~thgemRunAction()
@@ -77,7 +71,6 @@ void thgemRunAction::BeginOfRunAction(const G4Run* /*run*/)
 	// G4RunManager::GetRunManager()->SetRandomNumberStore(true);
 
 	G4double wavelength = fPrimary->GetNeutronWavelength();
-	G4int layer = fDetector->GetNbOfLayer();
 	G4double transformThick = fDetector->GetTransformThick()/um;
 	G4double stopThick = fDetector->GetStopThick()/um;
 	G4double gasThick = fDetector->GetGasThick()/mm;
@@ -86,7 +79,7 @@ void thgemRunAction::BeginOfRunAction(const G4Run* /*run*/)
 	G4String gasMaterial = fDetector->GetGasMaterial();
 
 	char rootName[200];
-	sprintf(rootName, "%.1lfAneutron_%dlayer_%.2lfum%s_%.1lfum%s_%.0lfmm%s.root", wavelength, layer, transformThick, transformMaterial.c_str(), stopThick, stopMaterial.c_str(), gasThick, gasMaterial.c_str());
+	sprintf(rootName, "%.1lfA_neutron_%.2lfum_%s_%.1lfum_%s_%.0lfmm_%s.root", wavelength, transformThick, transformMaterial.c_str(), stopThick, stopMaterial.c_str(), gasThick, gasMaterial.c_str());
 
 	// Get analysis manager
 	G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();

@@ -18,94 +18,81 @@ thgemSteppingAction::~thgemSteppingAction()
 {}
 void thgemSteppingAction::UserSteppingAction(const G4Step* step)
 {	
-	eventID = fEventAction->GetEventID();
-
 	G4Track* track = step->GetTrack();
-	trackID = track->GetTrackID();
-	parentID = track->GetParentID();	
-	particleName = track->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
-	stepNumber = track->GetCurrentStepNumber();
-	globalTime = track->GetGlobalTime();
-	// localTime = track->GetLocalTime();
-	// properTime = track->GetProperTime();
-	position = track->GetPosition();
 
-	kinEnergyStart = track->GetVertexKineticEnergy();
-	kinEnergy = track->GetKineticEnergy();
-	// totalEnergy = track->GetTotalEnergy();
-	momentumStartDir = track->GetVertexMomentumDirection();
-	momentumDir = track->GetMomentumDirection();
-	// momentumSize = track->GetMomentum();
+	// G4int eventID = fEventAction->GetEventID();
+	// G4int trackID = track->GetTrackID();
+	// G4int parentID = track->GetParentID();	
+	// G4int stepNumber = track->GetCurrentStepNumber();
+	G4String particleName = track->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
+	G4double globalTime = track->GetGlobalTime();
+	// G4double localTime = track->GetLocalTime();
+	// G4double properTime = track->GetProperTime();
+	G4double kinEnergyStart = track->GetVertexKineticEnergy();
+	G4double kinEnergy = track->GetKineticEnergy();
+	G4ThreeVector position = track->GetPosition();
+	// G4ThreeVector momentumStartDir = track->GetVertexMomentumDirection();
+	G4ThreeVector momentumDir = track->GetMomentumDirection();
+	// G4ThreeVector momentumSize = track->GetMomentum();
 
-	energyDeposit = step->GetTotalEnergyDeposit();
-	// stepLength = step->GetStepLength();
-	// stepTOF = step->GetDeltaTime();
+	G4double energyDeposit = step->GetTotalEnergyDeposit();
+	// G4double stepLength = step->GetStepLength();
+	// G4double stepTOF = step->GetDeltaTime();
 
-	pointPre = step->GetPreStepPoint();
-	pointPost = step->GetPostStepPoint();
+	G4VPhysicalVolume *volumePre = step->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
+	G4VPhysicalVolume *volumePost = step->GetPostStepPoint()->GetTouchableHandle()->GetVolume();
 
 	// positionPre = pointPre->GetPosition(); // get position in the global coordinate system;
 	// positionPost = pointPost->GetPosition();
 
-	touchPre = pointPre->GetTouchableHandle(); // 
-	touchPost = pointPost->GetTouchableHandle();
+	// G4String namePre, namePost;
 
-	volumePre = touchPre->GetVolume(); // get the current volume
-	volumePost = touchPost->GetVolume();
-
-	if(volumePost == 0){
-		namePre = volumePre->GetName();
-		namePost = "OutOfWorld";
-		// logical_volumePre = volumePre->GetLogicalVolume()->GetName();
-		// logical_volumePost = "LogicalNull";
-		materialPre = pointPre->GetMaterial()->GetName();
-		materialPost = "MaterialNull";
-	}else{
-		namePre = volumePre->GetName();
-		namePost = volumePost->GetName();
-		// logical_volumePre = volumePre->GetLogicalVolume();
-		// logical_volumePost = volumePost->GetLogicalVolume();
-		materialPre = pointPre->GetMaterial()->GetName();
-		materialPost = pointPost->GetMaterial()->GetName();
-	}
+	// if(!volumePost){
+	// 	namePre = volumePre->GetName();
+	// 	namePost = "OutOfWorld";
+	// 	// logical_volumePre = volumePre->GetLogicalVolume()->GetName();
+	// 	// logical_volumePost = "LogicalNull";
+	// 	// materialPre = pointPre->GetMaterial()->GetName();
+	// 	// materialPost = "MaterialNull";
+	// }else{
+	// 	namePre = volumePre->GetName();
+	// 	namePost = volumePost->GetName();
+	// 	// logical_volumePre = volumePre->GetLogicalVolume();
+	// 	// logical_volumePost = volumePost->GetLogicalVolume();
+	// 	// materialPre = pointPre->GetMaterial()->GetName();
+	// 	// materialPost = pointPost->GetMaterial()->GetName();
+	// }
 	// if(positionPre->GetStepStatus() == fGeomBoundary) // the preStepPoint is at the boundary
 	// if(positionPost->GetStepStatus() == fGeomBoundary) // the postStepPoint is at the boundary
-	if(volumePre == fDetConstruction->GetPhysiGas())
-		fEventAction->AddGas(energyDeposit);
+	
+	if(volumePre == fDetConstruction->GetPhysiGas()) fEventAction->AddGas(energyDeposit);
 
 	// Debug
 	// if(particleName != "neutron")
-	// G4cout << eventID << "    " << parentID << "    " << trackID << "    " << stepNumber << "    " << particleName << "    "  << G4BestUnit(globalTime, "Time") << "    " << G4BestUnit(kinEnergyStart, "Energy") << "    " << G4BestUnit(kinEnergy, "Energy") << "    " << G4BestUnit(energyDeposit, "Energy") << "    " << G4BestUnit(position.z(), "Length") << "    " << G4BestUnit(positionPost.z(), "Length") << "    " << namePre << "    " << namePost << G4endl;
+	// G4cout << eventID << "    " << parentID << "    " << trackID << "    " << stepNumber << "    " << particleName << "    "  << G4BestUnit(globalTime, "Time") << "    " << G4BestUnit(kinEnergyStart, "Energy") << "    " << G4BestUnit(kinEnergy, "Energy") << "    " << G4BestUnit(energyDeposit, "Energy") << "	" << namePre << "	" << namePost << G4endl;
 	
-	if(((particleName == "alpha")||(particleName == "Li7"))&&((namePre == "Stop")&&(namePost == "Gas")))
-	// if(((particleName == "alpha")||(particleName == "Li7"))&&((namePre == "Transform")&&(namePost == "Gas")))
+	if(fDetConstruction->GetPhysiStop())
 	{
-		fEventAction->SaveParticleName(particleName);
-		fEventAction->SaveKinEnergyStart(kinEnergyStart);
-		// fEventAction->SaveMomentumStartDir(momentumStartDir);
-		fEventAction->SaveKinEnergy(kinEnergy);
-		fEventAction->SaveGlobalTime(globalTime);
-		fEventAction->SavePosition(position);		
-		fEventAction->SaveMomentumDir(momentumDir);
+		if(((particleName == "alpha")||(particleName == "Li7"))&&((volumePre == fDetConstruction->GetPhysiStop())&&(volumePost == fDetConstruction->GetPhysiGas())))
+		{
+			fEventAction->SaveParticleName(particleName);
+			fEventAction->SavePosition(position);		
+			fEventAction->SaveKinEnergyStart(kinEnergyStart);
+			fEventAction->SaveKinEnergy(kinEnergy);
+			fEventAction->SaveMomentumDir(momentumDir);
+			fEventAction->SaveGlobalTime(globalTime);
+		}		
 	}
-	if((particleName == "e-") && (stepNumber == 1) && (namePre == "Gas") && (namePost == "Gas"))
+	else
 	{
-		fEventAction->AddElectronNumber();
-		fEventAction->AddElectronPosition(position);
-
-		G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
-		analysisManager->FillH3(1, position.x(), position.y(), position.z());
-		analysisManager->FillNtupleIColumn(1, 0, eventID);
-		analysisManager->FillNtupleIColumn(1, 1, parentID);
-		analysisManager->FillNtupleDColumn(1, 2, kinEnergyStart/eV);
-		analysisManager->FillNtupleDColumn(1, 3, globalTime/ns);
-		analysisManager->FillNtupleDColumn(1, 4, position.x());
-		analysisManager->FillNtupleDColumn(1, 5, position.y());
-		analysisManager->FillNtupleDColumn(1, 6, position.z());
-		analysisManager->FillNtupleDColumn(1, 7, momentumDir.x());
-		analysisManager->FillNtupleDColumn(1, 8, momentumDir.y());
-		analysisManager->FillNtupleDColumn(1, 9, momentumDir.z());
-		analysisManager->AddNtupleRow(1);
+		if(((particleName == "alpha")||(particleName == "Li7"))&&((volumePre == fDetConstruction->GetPhysiTransform())&&(volumePost == fDetConstruction->GetPhysiGas())))
+		{
+			fEventAction->SaveParticleName(particleName);
+			fEventAction->SavePosition(position);	
+			fEventAction->SaveKinEnergyStart(kinEnergyStart);
+			fEventAction->SaveKinEnergy(kinEnergy);
+			fEventAction->SaveMomentumDir(momentumDir);
+			fEventAction->SaveGlobalTime(globalTime);
+		}
 	}
-	
 }

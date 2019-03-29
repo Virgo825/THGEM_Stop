@@ -32,11 +32,14 @@ private:
     G4UIcmdWithAString* fTransformMatCmd;
     G4UIcmdWithAString* fGasMatCmd;
 
-    G4UIcmdWithAnInteger* fNbOfLayerCmd;
-
     G4UIcmdWithADoubleAndUnit* fStepMaxCmd;
     G4UIcmdWithADoubleAndUnit* fCathodeThickCmd;
     G4UIcmdWithADoubleAndUnit* fTransformThickCmd;
     G4UIcmdWithADoubleAndUnit* fGasThickCmd;
+
+    G4UIdirectory *fPhysicsDir;
+    G4UIcommand *fIonizationModelCmd;
+    G4UIcommand *fGeant4ParticleCmd;   
+    G4UIcommand *fGarfieldParticleCmd;
 };
 #endif

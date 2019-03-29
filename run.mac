@@ -1,12 +1,13 @@
 # Macro file for thgem
 # 
 # Can be run in batch, without graphic
-# or interactively: Idle> /control/execute run.mac
 #
 # Initialize kernel
 /control/verbose 0
 /run/verbose 1
 /tracking/verbose 0
+#
+/control/execute physics.mac
 /run/initialize
 #
 /run/beamOn 1000

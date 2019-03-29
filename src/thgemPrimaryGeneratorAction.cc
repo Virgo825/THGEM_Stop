@@ -37,20 +37,24 @@ void thgemPrimaryGeneratorAction::SetDefaultKinematic()
 {
 	G4ParticleDefinition* particle = G4ParticleTable::GetParticleTable()->FindParticle("neutron");
 	fParticleGun->SetParticleDefinition(particle);
-	fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,-1.));
+	fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0., -1., 0.));
 	fParticleGun->SetParticleEnergy(GetNeutronEnergy());
 }
 void thgemPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-	G4double startPositionX = G4UniformRand()-0.5;
-	G4double startPositionY = G4UniformRand()-0.5;
-	while(sqrt(startPositionX*startPositionX+startPositionY*startPositionY) > 0.5)
-	{
-		startPositionX = G4UniformRand()-0.5;
-		startPositionY = G4UniformRand()-0.5;
-	}
-	G4double startPositionZ = (fDetector->GetDetectorSizeZ()) / 2. + 3.;
-	fParticleGun->SetParticlePosition(G4ThreeVector(startPositionX, startPositionY, startPositionZ));
+	G4double startPositionX = 0.;
+	G4double startPositionY = 0.;
+
+	// G4double startPositionX = G4UniformRand()-0.5;
+	// G4double startPositionY = G4UniformRand()-0.5;
+	// while(sqrt(startPositionX*startPositionX+startPositionY*startPositionY) > 0.5)
+	// {
+	// 	startPositionX = G4UniformRand()-0.5;
+	// 	startPositionY = G4UniformRand()-0.5;
+	// }
+	G4double startPositionZ = (fDetector->GetDetectorSizeZ()) + 2.;
+
+	fParticleGun->SetParticlePosition(G4ThreeVector(startPositionX, startPositionZ, startPositionY));
 	if(fNeutronWavelength != 1.8)
 		fParticleGun->SetParticleEnergy(GetNeutronEnergy());
 
@@ -58,10 +62,10 @@ void thgemPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 }
 void thgemPrimaryGeneratorAction::PrintParticleParameter() const
 {
-	G4cout << "-------------------------------------------------" << G4endl
+	G4cout << "------------------------------------------" << G4endl
 		   << " ---> The particle property: " << G4endl
 		   << " ---> Name:      " << fParticleGun->GetParticleDefinition()->GetParticleName() << G4endl
 		   << " ---> Energy:    " << G4BestUnit(fParticleGun->GetParticleEnergy(), "Energy") << G4endl
-		   << " ---> PositionZ: " << G4BestUnit((fParticleGun->GetParticlePosition()).z(), "Length") << G4endl
-		   << "-------------------------------------------------" << G4endl;
+		   << " ---> PositionY: " << G4BestUnit((fParticleGun->GetParticlePosition()).y(), "Length") << G4endl
+		   << "------------------------------------------" << G4endl;
 }

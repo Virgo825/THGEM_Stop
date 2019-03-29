@@ -2,6 +2,7 @@
 #include "thgemDetectorConstruction.hh"
 #include "thgemActionInitialization.hh"
 #include "thgemPhysicsList.hh"
+#include "thgemPhysics.hh"
 
 #include "G4RunManager.hh"
 
@@ -16,10 +17,7 @@
 #include "G4VisExecutive.hh"
 #include "G4UIExecutive.hh"
 
-#include <iostream>
-#include <fstream>
-
-using namespace std;
+#include "Random.hh"
 
 namespace {
 	void PrintUsage(){
@@ -53,6 +51,7 @@ int main(int argc, char** argv)
 	// Choose the Random engine.
 	// G4Random::setTheEngine(new CLHEP::RanecuEngine);
 	CLHEP::HepRandom::setTheSeed((G4long)time(0));
+	Garfield::randomEngine.Seed(1);
 
 	G4RunManager * runManager = new G4RunManager;
 
@@ -94,4 +93,5 @@ int main(int argc, char** argv)
 	 
 	delete visManager;
 	delete runManager;
+	thgemPhysics::Dispose();
 }

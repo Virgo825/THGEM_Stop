@@ -1,5 +1,6 @@
 
 #include "thgemPhysicsList.hh"
+#include "thgemPhysics.hh"
 
 #include "G4ProcessManager.hh"
 #include "G4ProcessVector.hh"
@@ -36,38 +37,67 @@ thgemPhysicsList::~thgemPhysicsList()
 {}
 void thgemPhysicsList::AddParameterisation()
 {
-    theParticleIterator->reset();
-    while((*theParticleIterator)())
-    {
-        G4ParticleDefinition* particle = theParticleIterator->value();
-        // G4ProcessManager* pmanager = particle->GetProcessManager();
-        G4EmConfigurator* config = G4LossTableManager::Instance()->EmConfigurator();
-        G4LossTableManager::Instance()->SetVerbose(1);
+	thgemPhysics *physics = thgemPhysics::GetInstance();
 
-        G4PAIPhotModel* paiPhot = new G4PAIPhotModel(particle, "G4PAIPhotModel");
-        
-        if(particle->GetParticleName() == "e-" || particle->GetParticleName() == "e+")
-            config->SetExtraEmModel(particle->GetParticleName(), "eIoni", paiPhot, "RegionTHGEM", 0.01 * keV, 100 * TeV, paiPhot);
-        else if(particle->GetParticleName() == "proton" || particle->GetParticleName() == "pi+" || particle->GetParticleName() == "pi-")
-            config->SetExtraEmModel(particle->GetParticleName(), "hIoni", paiPhot, "RegionTHGEM", 0.01 * keV, 100 * TeV, paiPhot);
-        else if(particle->GetParticleName() == "alpha" || particle->GetParticleName() == "He3" || particle->GetParticleName() == "Li7" || particle->GetParticleName() == "GenericIon")
-            config->SetExtraEmModel(particle->GetParticleName(), "ionIoni", paiPhot, "RegionTHGEM", 0.01 * keV, 100 * TeV, paiPhot);
-    }
+	G4String ionizationModel = physics->GetIonizationModel();
+
+	G4FastSimulationManagerProcess *fastSimProcess_thgem = new G4FastSimulationManagerProcess("G4FSMP_garfield");
+
+	theParticleIterator->reset();
+	while ((*theParticleIterator)())
+	{
+		G4ParticleDefinition *particle = theParticleIterator->value();
+		G4ProcessManager *pmanager = particle->GetProcessManager();
+		G4EmConfigurator *config = G4LossTableManager::Instance()->EmConfigurator();
+		G4LossTableManager::Instance()->SetVerbose(1);
+
+		if (physics->FindParticleName(particle->GetParticleName(), "garfield"))
+			pmanager->AddDiscreteProcess(fastSimProcess_thgem);    
+		if (physics->FindParticleName(particle->GetParticleName(), "geant4"))
+		{
+			G4double minEnergy_MeV = physics->GetMinEnergyMeVParticle(particle->GetParticleName(), "geant4");
+			G4double maxEnergy_MeV = physics->GetMaxEnergyMeVParticle(particle->GetParticleName(), "geant4");
+			if (ionizationModel == "PAI")
+			{
+				G4PAIModel *pai = new G4PAIModel(particle, "G4PAIModel");
+				if (particle->GetParticleName() == "e-" || particle->GetParticleName() == "e+")
+					config->SetExtraEmModel(particle->GetParticleName(), "eIoni", pai, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, pai);
+				else if (particle->GetParticleName() == "mu-" || particle->GetParticleName() == "mu+")
+					config->SetExtraEmModel(particle->GetParticleName(), "muIoni", pai, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, pai);
+				else if (particle->GetParticleName() == "proton" || particle->GetParticleName() == "pi+" || particle->GetParticleName() == "pi-")
+					config->SetExtraEmModel(particle->GetParticleName(), "hIoni", pai, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, pai);
+				else if (particle->GetParticleName() == "alpha" || particle->GetParticleName() == "He3" || particle->GetParticleName() == "GenericIon")
+					config->SetExtraEmModel(particle->GetParticleName(), "ionIoni", pai, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, pai);
+			}
+			else if (ionizationModel == "PAIPhot")
+			{
+				G4PAIPhotModel *paiPhot = new G4PAIPhotModel(particle, "G4PAIPhotModel");
+				if (particle->GetParticleName() == "e-" || particle->GetParticleName() == "e+")
+					config->SetExtraEmModel(particle->GetParticleName(), "eIoni", paiPhot, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, paiPhot);
+				else if (particle->GetParticleName() == "mu-" || particle->GetParticleName() == "mu+")
+					config->SetExtraEmModel(particle->GetParticleName(), "muIoni", paiPhot, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, paiPhot);
+				else if (particle->GetParticleName() == "proton" || particle->GetParticleName() == "pi+" || particle->GetParticleName() == "pi-")
+					config->SetExtraEmModel(particle->GetParticleName(), "hIoni", paiPhot, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, paiPhot);
+				else if (particle->GetParticleName() == "alpha" || particle->GetParticleName() == "He3" || particle->GetParticleName() == "GenericIon")
+					config->SetExtraEmModel(particle->GetParticleName(), "ionIoni", paiPhot, "RegionGas", minEnergy_MeV * MeV, maxEnergy_MeV * MeV, paiPhot);
+			}
+		}
+	}
 }
 void thgemPhysicsList::SetCuts()
 {
-    G4ProductionCutsTable::GetProductionCutsTable()->SetEnergyRange(100 * eV, 100 * TeV);
+    G4ProductionCutsTable::GetProductionCutsTable()->SetEnergyRange(21.5 * eV, 100 * TeV);
     SetCutsWithDefault();
 
-    G4Region* region = G4RegionStore::GetInstance()->GetRegion("RegionTHGEM");
+    G4Region* region = G4RegionStore::GetInstance()->GetRegion("RegionGas");
     G4ProductionCuts* cuts = new G4ProductionCuts();
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("gamma"));
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("e+"));
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("e-"));
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("proton"));
-    cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("alpha"));
-    cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("Li7"));
-    cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("GenericIon"));
+    // cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("alpha"));
+    // cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("Li7"));
+    // cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("GenericIon"));
 
     if(region) region->SetProductionCuts(cuts);
 
