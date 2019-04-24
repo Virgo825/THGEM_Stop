@@ -2,6 +2,7 @@
 #include "thgemDetectorConstruction.hh"
 #include "thgemDetectorMessenger.hh"
 #include "thgemFastSimulationModel.hh"
+#include "thgemPhysics.hh"
 
 #include "G4Material.hh"
 #include "G4Element.hh"
@@ -47,7 +48,7 @@ thgemDetectorConstruction::thgemDetectorConstruction()
 	  fCathodeMaterial(NULL), fTransformMaterial(NULL), fGasMaterial(NULL),
 	  fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiStop(NULL), fPhysiGas(NULL),
 	  fStepLimit(NULL), fFastSimulationModel(NULL), 
-	  fCathodeThick(100*um), fTransformThick(0.1*um), fStopThick(0.4*um), fGasThick(2.*mm),
+	  fCathodeThick(100*um), fTransformThick(0.1*um), fStopThick(0*um), fGasThick(7.*mm),
 	  fB10Abundance(96.), fCheckOverlaps(true)
 {
 	// Define materials
@@ -146,11 +147,15 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	G4double worldSizeXZ = 1.2 * SizeXY;
 	G4double worldSizeY = 6 * detectorSizeZ;
 
+	// Set drift thick in garfield++.
+	thgemPhysics *physics = thgemPhysics::GetInstance();
+	physics->SetDriftThick(fGasThick);
+
 	// Get materials
 	G4Material *worldMaterial = G4Material::GetMaterial("G4_AIR"); // Neutron react with nitrogen and oxygen.
 	fCathodeMaterial = G4Material::GetMaterial("G4_Al");
 	fTransformMaterial = G4Material::GetMaterial("natural_B4C");
-	fStopMaterial = G4Material::GetMaterial("G4_Ti");
+	fStopMaterial = G4Material::GetMaterial("G4_Al");
 	fGasMaterial = G4Material::GetMaterial("ArCO2_90_10");
 
 	// Cleanup old geometry
@@ -194,10 +199,16 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	fPhysiTransform= new G4PVPlacement(0, positionTransform, logicTransform, "Transform", logicDetector, false, 0, fCheckOverlaps);
 
 	// Stop
-	G4ThreeVector positionStop = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
-	G4VSolid *solidStop = new G4Box("Stop", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * stopSizeZ);
-	G4LogicalVolume *logicStop = new G4LogicalVolume(solidStop, fStopMaterial, "Stop");
-	fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicDetector, false, 0, fCheckOverlaps);
+	if(fStopThick != 0)
+	{
+		G4ThreeVector positionStop = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
+		G4VSolid *solidStop = new G4Box("Stop", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * stopSizeZ);
+		G4LogicalVolume *logicStop = new G4LogicalVolume(solidStop, fStopMaterial, "Stop");
+		fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicDetector, false, 0, fCheckOverlaps);
+		
+		G4VisAttributes *VisAttYellow = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
+		logicStop->SetVisAttributes(VisAttYellow);
+	}
 
 	// Gas
 	G4ThreeVector positionGas = G4ThreeVector(0., 0., -detectorSizeZ/2.+gasSizeZ/2.);
@@ -208,19 +219,17 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	// Visualization attributes
 	G4VisAttributes *VisAttBlue = new G4VisAttributes(G4Colour(0.0, 0.0, 1.0));
 	G4VisAttributes *VisAttGreen = new G4VisAttributes(G4Colour(0.0, 1.0, 0.0));
-	G4VisAttributes *VisAttYellow = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
 	G4VisAttributes *VisAttRed = new G4VisAttributes(G4Colour(1.0, 0.0, 0.0));
 	G4VisAttributes *VisAttWhite = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
 
-	// logicWorld->SetVisAttributes(G4VisAttributes::Invisible);
+	logicWorld->SetVisAttributes(G4VisAttributes::Invisible);
 	logicDetector->SetVisAttributes(VisAttWhite);
 	logicCathode->SetVisAttributes(VisAttRed);
 	logicTransform->SetVisAttributes(VisAttGreen);
-	logicStop->SetVisAttributes(VisAttYellow);
 	logicGas->SetVisAttributes(VisAttBlue);
 
 	G4Region* regionGas = new G4Region("RegionGas");
-	// logicGas->SetRegion(regionGas);
+	logicGas->SetRegion(regionGas);
 	regionGas->AddRootLogicalVolume(logicGas);
 
 	fFastSimulationModel = new thgemFastSimulationModel("thgemFastSimulationModel", regionGas);

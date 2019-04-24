@@ -61,6 +61,7 @@ public:
     void DoIt(std::string, double, double, double, double, double, double, double, double);
     std::vector<GarfieldParticle *> *GetSecondaryParticles();
     void DeleteSecondaryParticles();
+    void SetDriftThick(double l) {fDriftThick = l/10.;}
 
     inline void EnableCreateSecondariesInGeant4(bool flag) {createSecondariesInGeant4 = flag;}
     inline bool GetCreateSecondariesInGeant4() {return createSecondariesInGeant4;}
@@ -104,6 +105,7 @@ private:
     std::vector<GarfieldParticle *> *fSecondaryParticles;
 
     bool createSecondariesInGeant4;
+    double fDriftThick;
     double fEnergyDeposit;
     double fElectronPosSumX;
     double fElectronPosSumY;

@@ -52,7 +52,7 @@ thgemPhysics::~thgemPhysics()
 
 	DeleteSecondaryParticles();
 
-	std::cout << "Deconstructor THGEMPhysics" << std::endl;
+	std::cout << "Deconstructor thgemPhysics" << std::endl;
 }
 std::string thgemPhysics::GetIonizationModel()
 {
@@ -231,18 +231,17 @@ void thgemPhysics::InitializePhysics()
 	fMediumMagboltz->EnablePenningTransfer(rPenning, lambdaPenning, "ar");
 	fMediumMagboltz->LoadGasFile("ar_90_co2_10_1000mbar.gas");
 
-    const double drift = 0.2;
     const double gasSizeXZ = 10.;
-    const double Vdrift = -1600.;
     const double VGemUp = -1400.;
+    const double Vdrift = VGemUp - fDriftThick * 1000.;
 
     fGeometrySimple = new Garfield::GeometrySimple();
-    fSolidBox = new Garfield::SolidBox(0., drift/2., 0., gasSizeXZ/2., drift/2., gasSizeXZ/2.);
+    fSolidBox = new Garfield::SolidBox(0., fDriftThick/2., 0., gasSizeXZ/2., fDriftThick/2., gasSizeXZ/2.);
     fGeometrySimple->AddSolid(fSolidBox, fMediumMagboltz);
 
     fComponentAnalyticField = new Garfield::ComponentAnalyticField();
     fComponentAnalyticField->SetGeometry(fGeometrySimple);
-    fComponentAnalyticField->AddPlaneY(drift, Vdrift, "Cathode");
+    fComponentAnalyticField->AddPlaneY(fDriftThick, Vdrift, "Cathode");
     fComponentAnalyticField->AddPlaneY(0., VGemUp, "GemUp");
 
     // const double pitch = 0.06;                       // Distance between holes, in cm
@@ -250,7 +249,7 @@ void thgemPhysics::InitializePhysics()
     // const double ceramics = 0.0168;                  // Thickness of the ceramics layer, in cm
     // const double dia = 0.02;                         // Outer diameter of hole, in cm
     // const double rim = 0.008;                        // Rim diameter, in cm
-    // const double drift = 0.4;                        // Thickness of drift region
+    // const double fDriftThick = 0.4;                        // Thickness of drift region
     // const double induct = 0.2;                       // Thickness of induct region
     // const double thgem_thick = metal * 2 + ceramics; // Thickness of THGEM, in cm
 
@@ -296,11 +295,9 @@ void thgemPhysics::DoIt(std::string particleName, double ekin_MeV, double time, 
 
 	// const double metal = 0.0018;					 // Thickness of the metal layer, in cm
 	// const double ceramics = 0.0168;					 // Thickness of the ceramics layer, in cm
-	// const double drift = 0.4;						 // Thickness of drift region
+	// const double fDriftThick = 0.4;						 // Thickness of drift region
 	// const double induct = 0.2;						 // Thickness of induct region
 	// const double thgem_thick = metal * 2 + ceramics; // Thickness of THGEM, in cm
-
-    const double drift = 0.2;
 
 	double eKin_eV = ekin_MeV * 1.e+6;
 
@@ -313,26 +310,28 @@ void thgemPhysics::DoIt(std::string particleName, double ekin_MeV, double time, 
     if (fIonizationModel != "Heed" || particleName == "gamma")
 	{
 		if (particleName == "gamma")
-			fTrackHeed->TransportPhoton(x_cm, y_cm, z_cm, time, eKin_eV, dx, dy, dz, nc);
+		{
+			if(y_cm >= 0. && y_cm <= fDriftThick)
+				fTrackHeed->TransportPhoton(x_cm, y_cm, z_cm, time, eKin_eV, dx, dy, dz, nc);
+		}
 		else
 		{
             fTrackHeed->TransportDeltaElectron(x_cm, y_cm, z_cm, time, eKin_eV, dx, dy, dz, nc);
             fEnergyDeposit = eKin_eV;
-		}
-        
+		}        
         // std::cout << particleName << std::setw(15) << x_cm << std::setw(15) << y_cm << std::setw(15) << z_cm << std::setw(15) << eKin_eV << std::setw(10) << nc << std::endl;
         for (int cl = 0; cl < nc; cl++)
 		{
 			double xe, ye, ze, te, ee, dxe, dye, dze;
 			fTrackHeed->GetElectron(cl, xe, ye, ze, te, ee, dxe, dye, dze);
-			if (ye >= 0. && ye <= drift)
+			if (ye >= 0. && ye <= fDriftThick)
 			{
                 fElectronNumber++;
                 fElectronPosSumX += xe;
                 fElectronPosSumY += ye;
                 fElectronPosSumZ += ze;
 
-                analysisManager->FillH3(1, xe*10., ze*10., ye*10.);
+                // analysisManager->FillH3(1, xe*10., ze*10., ye*10.);
                 analysisManager->FillNtupleDColumn(1, 0, xe);
                 analysisManager->FillNtupleDColumn(1, 1, ye);
                 analysisManager->FillNtupleDColumn(1, 2, ze);
@@ -359,7 +358,7 @@ void thgemPhysics::DoIt(std::string particleName, double ekin_MeV, double time, 
 		fTrackHeed->NewTrack(x_cm, y_cm, z_cm, time, dx, dy, dz);
 		while (fTrackHeed->GetCluster(xc, yc, zc, tc, nc, ec, extra))
 		{
-            if (yc >= 0. && yc <= drift)
+            if (yc >= 0. && yc <= fDriftThick)
             {
                 fEnergyDeposit += ec;
                 for (int cl = 0; cl < nc; cl++)
