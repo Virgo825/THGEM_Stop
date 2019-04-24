@@ -30,7 +30,7 @@ thgemRunAction::thgemRunAction(thgemDetectorConstruction* det, thgemPrimaryGener
 	// Creating histograms
 	// analysisManager->CreateH1("1", "Edep in Gas", 100, 0., 2*MeV);
 	// analysisManager->CreateH2("1", "Track position in XY", 200, -10*cm, 10*cm, 200, -10*cm, 10*cm);
-	analysisManager->CreateH3("1", "Track position", 100, -5*mm, 5*mm, 100, -5*mm, 5*mm, 100, -1*mm, 9*mm);
+	// analysisManager->CreateH3("1", "Track position", 100, -5*mm, 5*mm, 100, -5*mm, 5*mm, 100, -1*mm, 9*mm);
 
 	// Creating 1st ntuple (id = 0)
 	analysisManager->CreateNtuple("ion", "The information of primary ions");
