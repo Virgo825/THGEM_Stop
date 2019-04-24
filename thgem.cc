@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 	// Choose the Random engine.
 	// G4Random::setTheEngine(new CLHEP::RanecuEngine);
 	CLHEP::HepRandom::setTheSeed((G4long)time(0));
-	Garfield::randomEngine.Seed(1);
+	Garfield::randomEngine.Seed((G4long)time(0));
 
 	G4RunManager * runManager = new G4RunManager;
 
