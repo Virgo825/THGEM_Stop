@@ -41,7 +41,7 @@ void thgemEventAction::EndOfEventAction(const G4Event* /*event*/)
 
 		G4cout << " ---> EventID: " << fEventID << "   " << fParticleName << "	" << G4BestUnit(fEnergyGas, "Energy") << "	" << physics->GetElectronNumber() << G4endl;
 
-		G4double angle = (atan(fabs(sqrt((fMomentumDir.x())*(fMomentumDir.x())+(fMomentumDir.y())*(fMomentumDir.y()))/fMomentumDir.z())))*180/3.14;
+		G4double angle = (atan(fabs(sqrt((fMomentumDir.x())*(fMomentumDir.x())+(fMomentumDir.z())*(fMomentumDir.z()))/fMomentumDir.y())))*180/3.14;
 
 		G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
 		analysisManager->FillNtupleIColumn(0, 0, fEventID);
