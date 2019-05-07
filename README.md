@@ -17,10 +17,10 @@ make
 ```
 以 batch mode 运行程序, 在终端输入 
 ```bash
->./thgem -m ./run.mac.
+./thgem -m ./run.mac.
 ```
 程序也可以以可视化的方式来运行，在终端输入
 ```bash
->./thgem
+./thgem
 ```
 然后点击 <font color=magenta>run</font> 按钮.
