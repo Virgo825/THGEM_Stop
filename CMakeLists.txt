@@ -82,6 +82,7 @@ set(thgem_SCRIPTS
   gui.mac
   physics.mac
   init_vis.mac
+  init.mac
   run.mac
   run.png
   vis.mac
