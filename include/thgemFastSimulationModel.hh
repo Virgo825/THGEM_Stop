@@ -4,7 +4,7 @@
 #include "G4VFastSimulationModel.hh"
 #include "thgemPhysics.hh"
 
-class G4VPhysicalVolum;
+class G4VPhysicalVolume;
 
 class thgemFastSimulationModel : public G4VFastSimulationModel
 {
