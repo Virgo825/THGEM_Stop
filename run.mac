@@ -1,13 +1,19 @@
-# Macro file for thgem
+# Macro file for thgem 
 # 
-# Can be run in batch, without graphic
+# Can be run in batch, without graphic or interactively
+# Idle> /control/execute run.mac
 #
-# Initialize kernel
+# Change the default number of workers (in multi-threading mode)
+#/run/numberOfWorkers 4
+#
 /control/verbose 0
 /run/verbose 0
 /tracking/verbose 0
 #
+# PAI PAIPhot Heed models
 /control/execute physics.mac
+#
+# Initialize kernel
 /run/initialize
 #
 /run/beamOn 10000000
