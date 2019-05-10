@@ -19,7 +19,7 @@
 #include "G4UIExecutive.hh"
 #endif
 
-#include "Random.hh"
+#include "Garfield/Random.hh"
 
 namespace {
 	void PrintUsage(){

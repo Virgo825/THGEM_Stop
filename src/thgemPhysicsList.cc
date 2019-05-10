@@ -43,6 +43,7 @@ void thgemPhysicsList::AddParameterisation()
 
 	G4FastSimulationManagerProcess *fastSimProcess_thgem = new G4FastSimulationManagerProcess("G4FSMP_thgem");
 
+	auto theParticleIterator = GetParticleIterator();
 	theParticleIterator->reset();
 	while ((*theParticleIterator)())
 	{
