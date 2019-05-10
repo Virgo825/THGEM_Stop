@@ -48,7 +48,7 @@ thgemDetectorConstruction::thgemDetectorConstruction()
 	  fCathodeMaterial(NULL), fTransformMaterial(NULL), fGasMaterial(NULL),
 	  fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiStop(NULL), fPhysiGas(NULL),
 	  fStepLimit(NULL), fFastSimulationModel(NULL), 
-	  fCathodeThick(100*um), fTransformThick(0.1*um), fStopThick(0*um), fGasThick(7.*mm),
+	  fCathodeThick(100*um), fTransformThick(2.0*um), fStopThick(0.4*um), fGasThick(4.*mm),
 	  fB10Abundance(96.), fCheckOverlaps(true)
 {
 	// Define materials
@@ -152,9 +152,9 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	physics->SetDriftThick(fGasThick);
 
 	// Get materials
-	G4Material *worldMaterial = G4Material::GetMaterial("G4_AIR"); // Neutron react with nitrogen and oxygen.
+	G4Material *defaultMaterial = G4Material::GetMaterial("G4_AIR"); // Neutron react with nitrogen and oxygen.
 	fCathodeMaterial = G4Material::GetMaterial("G4_Al");
-	fTransformMaterial = G4Material::GetMaterial("natural_B4C");
+	fTransformMaterial = G4Material::GetMaterial("enriched_B4C");
 	fStopMaterial = G4Material::GetMaterial("G4_Al");
 	fGasMaterial = G4Material::GetMaterial("ArCO2_90_10");
 
@@ -168,7 +168,7 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	G4VSolid *solidWorld = new G4Box("World",												  // its name
 									 0.5 * worldSizeXZ, 0.5 * worldSizeY, 0.5 * worldSizeXZ); // its size
 	G4LogicalVolume *logicWorld = new G4LogicalVolume(solidWorld,							  // its solid
-													  worldMaterial,						  // its material
+													  defaultMaterial,						  // its material
 													  "World");								  //its name
 	G4VPhysicalVolume *physiWorld = new G4PVPlacement(0,									  // no rotation
 													  G4ThreeVector(),						  // at (0,0,0)
@@ -183,7 +183,7 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	G4RotationMatrix *rotX = new G4RotationMatrix();
 	rotX->rotateX(90. * CLHEP::degree);
 	G4VSolid *solidDetector = new G4Box("Detector", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * detectorSizeZ);
-	G4LogicalVolume *logicDetector = new G4LogicalVolume(solidDetector, fGasMaterial, "Detector");
+	G4LogicalVolume *logicDetector = new G4LogicalVolume(solidDetector, defaultMaterial, "Detector");
 	new G4PVPlacement(rotX, positionDetector, logicDetector, "Detector", logicWorld, false, 0, fCheckOverlaps);
 
 	// Cathode
@@ -229,10 +229,10 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	logicGas->SetVisAttributes(VisAttBlue);
 
 	G4Region* regionGas = new G4Region("RegionGas");
-	logicGas->SetRegion(regionGas);
+	// logicGas->SetRegion(regionGas);
 	regionGas->AddRootLogicalVolume(logicGas);
 
-	fFastSimulationModel = new thgemFastSimulationModel("thgemFastSimulationModel", regionGas);
+	fFastSimulationModel = new thgemFastSimulationModel("thgemG4FastSimulationModel", regionGas);
 	fFastSimulationModel->WriteGeometryToGDML(fPhysiGas);
 
 	// Always return the physical World

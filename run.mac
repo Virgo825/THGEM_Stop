@@ -4,11 +4,11 @@
 #
 # Initialize kernel
 /control/verbose 0
-/run/verbose 1
+/run/verbose 0
 /tracking/verbose 0
 #
 /control/execute physics.mac
 /run/initialize
 #
-/run/beamOn 1000
+/run/beamOn 10000000
 #

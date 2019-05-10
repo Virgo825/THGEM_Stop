@@ -41,7 +41,7 @@ void thgemPhysicsList::AddParameterisation()
 
 	G4String ionizationModel = physics->GetIonizationModel();
 
-	G4FastSimulationManagerProcess *fastSimProcess_thgem = new G4FastSimulationManagerProcess("G4FSMP_garfield");
+	G4FastSimulationManagerProcess *fastSimProcess_thgem = new G4FastSimulationManagerProcess("G4FSMP_thgem");
 
 	theParticleIterator->reset();
 	while ((*theParticleIterator)())
@@ -95,9 +95,6 @@ void thgemPhysicsList::SetCuts()
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("e+"));
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("e-"));
     cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("proton"));
-    // cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("alpha"));
-    // cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("Li7"));
-    // cuts->SetProductionCut(1. * um, G4ProductionCuts::GetIndex("GenericIon"));
 
     if(region) region->SetProductionCuts(cuts);
 

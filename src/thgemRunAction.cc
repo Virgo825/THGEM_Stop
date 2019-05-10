@@ -24,6 +24,7 @@ thgemRunAction::thgemRunAction(thgemDetectorConstruction* det, thgemPrimaryGener
 	analysisManager->SetFirstHistoId(1);
 	// analysisManager->SetFirstNtupleId(1);
 	// analysisManager->SetFirstNtupleColumnId(1);
+	
 
 	analysisManager->SetFileName("NeutronWavelength_1.8A.root");
 
