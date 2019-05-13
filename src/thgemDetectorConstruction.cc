@@ -48,8 +48,8 @@ thgemDetectorConstruction::thgemDetectorConstruction()
 	  fCathodeMaterial(NULL), fTransformMaterial(NULL), fGasMaterial(NULL),
 	  fPhysiCathode(NULL), fPhysiTransform(NULL), fPhysiStop(NULL), fPhysiGas(NULL),
 	  fStepLimit(NULL), fFastSimulationModel(NULL), 
-	  fCathodeThick(100*um), fTransformThick(2.0*um), fStopThick(0.4*um), fGasThick(4.*mm),
-	  fB10Abundance(96.), fCheckOverlaps(true)
+	  fCathodeThick(100*um), fTransformThick(2.0*um), fStopThick(1.0*um), fGasThick(2.*mm),
+	  fNOfLayers(8), fB10Abundance(96.), fCheckOverlaps(true)
 {
 	// Define materials
 	DefineMaterials();
@@ -143,13 +143,14 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	G4double transformSizeZ = fTransformThick;
 	G4double stopSizeZ = fStopThick;
 	G4double gasSizeZ = fGasThick;
-	G4double detectorSizeZ = cathodeSizeZ + transformSizeZ + stopSizeZ + gasSizeZ;
+	G4double layerSizeZ = cathodeSizeZ + transformSizeZ + stopSizeZ + gasSizeZ;
+	G4double detectorSizeZ = layerSizeZ * fNOfLayers;
 	G4double worldSizeXZ = 1.2 * SizeXY;
 	G4double worldSizeY = 6 * detectorSizeZ;
 
 	// Set drift thick in garfield++.
 	thgemPhysics *physics = thgemPhysics::GetInstance();
-	physics->SetDriftThick(fGasThick);
+	physics->SetDriftThick(detectorSizeZ);
 
 	// Get materials
 	G4Material *defaultMaterial = G4Material::GetMaterial("G4_AIR"); // Neutron react with nitrogen and oxygen.
@@ -186,35 +187,44 @@ G4VPhysicalVolume *thgemDetectorConstruction::DefineVolumes()
 	G4LogicalVolume *logicDetector = new G4LogicalVolume(solidDetector, defaultMaterial, "Detector");
 	new G4PVPlacement(rotX, positionDetector, logicDetector, "Detector", logicWorld, false, 0, fCheckOverlaps);
 
+	// Layer
+	G4ThreeVector positionLayer = G4ThreeVector(0., 0., 0.);
+	G4VSolid *solidLayer = new G4Box("Layer", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * layerSizeZ);
+	G4LogicalVolume *logicLayer = new G4LogicalVolume(solidLayer, defaultMaterial, "Layer");
+	if(1 == fNOfLayers)
+		new G4PVPlacement(0, positionLayer, logicLayer, "Layer", logicDetector, false, 0, fCheckOverlaps);
+	else
+		new G4PVReplica("Layer", logicLayer, logicDetector, kZAxis, fNOfLayers, layerSizeZ);
+
 	// Cathode
-	G4ThreeVector positionCathode = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ/2.);
+	G4ThreeVector positionCathode = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ/2.);
 	G4VSolid *solidCathode = new G4Box("Cathode", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * cathodeSizeZ);
 	G4LogicalVolume *logicCathode = new G4LogicalVolume(solidCathode, fCathodeMaterial, "Cathode");
-	fPhysiCathode = new G4PVPlacement(0, positionCathode, logicCathode, "Cathode", logicDetector, false, 0, fCheckOverlaps);
+	fPhysiCathode = new G4PVPlacement(0, positionCathode, logicCathode, "Cathode", logicLayer, false, 0, fCheckOverlaps);
 
 	// Transform
-	G4ThreeVector positionTransform = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ-transformSizeZ/2.);
+	G4ThreeVector positionTransform = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ-transformSizeZ/2.);
 	G4VSolid *solidTransform = new G4Box("Transform", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * transformSizeZ);
 	G4LogicalVolume *logicTransform = new G4LogicalVolume(solidTransform, fTransformMaterial, "Transform");
-	fPhysiTransform= new G4PVPlacement(0, positionTransform, logicTransform, "Transform", logicDetector, false, 0, fCheckOverlaps);
+	fPhysiTransform= new G4PVPlacement(0, positionTransform, logicTransform, "Transform", logicLayer, false, 0, fCheckOverlaps);
 
 	// Stop
 	if(fStopThick != 0)
 	{
-		G4ThreeVector positionStop = G4ThreeVector(0., 0., detectorSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
+		G4ThreeVector positionStop = G4ThreeVector(0., 0., layerSizeZ/2.-cathodeSizeZ-transformSizeZ-stopSizeZ/2.);
 		G4VSolid *solidStop = new G4Box("Stop", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * stopSizeZ);
 		G4LogicalVolume *logicStop = new G4LogicalVolume(solidStop, fStopMaterial, "Stop");
-		fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicDetector, false, 0, fCheckOverlaps);
+		fPhysiStop= new G4PVPlacement(0, positionStop, logicStop, "Stop", logicLayer, false, 0, fCheckOverlaps);
 		
 		G4VisAttributes *VisAttYellow = new G4VisAttributes(G4Colour(1.0, 1.0, 0.0));
 		logicStop->SetVisAttributes(VisAttYellow);
 	}
 
 	// Gas
-	G4ThreeVector positionGas = G4ThreeVector(0., 0., -detectorSizeZ/2.+gasSizeZ/2.);
+	G4ThreeVector positionGas = G4ThreeVector(0., 0., -layerSizeZ/2.+gasSizeZ/2.);
 	G4VSolid *solidGas = new G4Box("Gas", 0.5 * SizeXY, 0.5 * SizeXY, 0.5 * gasSizeZ);
 	G4LogicalVolume *logicGas = new G4LogicalVolume(solidGas, fGasMaterial, "Gas");
-	fPhysiGas = new G4PVPlacement(0, positionGas, logicGas, "Gas", logicDetector, false, 0, fCheckOverlaps);
+	fPhysiGas = new G4PVPlacement(0, positionGas, logicGas, "Gas", logicLayer, false, 0, fCheckOverlaps);
 
 	// Visualization attributes
 	G4VisAttributes *VisAttBlue = new G4VisAttributes(G4Colour(0.0, 0.0, 1.0));

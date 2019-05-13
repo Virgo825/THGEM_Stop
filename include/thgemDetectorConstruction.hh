@@ -38,7 +38,7 @@ class thgemDetectorConstruction : public G4VUserDetectorConstruction
 	void SetCheckOverlaps(G4bool);
 
 	// get methods
-	G4double GetDetectorSizeZ() { return (fCathodeThick + fTransformThick + fStopThick + fGasThick); }
+	G4double GetDetectorSizeZ() { return (fCathodeThick + fTransformThick + fStopThick + fGasThick) * fNOfLayers; }
 	G4double GetTransformThick() { return fTransformThick; }
 	G4double GetStopThick() { return fStopThick; }
 	G4double GetGasThick() { return fGasThick; }
@@ -76,6 +76,7 @@ class thgemDetectorConstruction : public G4VUserDetectorConstruction
 	G4double fTransformThick;
 	G4double fStopThick;
 	G4double fGasThick;
+	G4int fNOfLayers;
 	G4double fB10Abundance; 
 	G4bool fCheckOverlaps; // option to acticate checking of volumes overlaps
 };
